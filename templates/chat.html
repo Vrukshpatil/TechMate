@@ -2,99 +2,126 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>TechMate 🤖</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Important for mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechMate</title>
   <style>
+    :root {
+      --bg-color: #f7f7f7;
+      --text-color: #000;
+      --header-bg: #007bff;
+      --header-text: #fff;
+      --input-bg: #f1f1f1;
+      --btn-bg: #007bff;
+      --btn-hover: #0056b3;
+    }
+    body.dark {
+      --bg-color: #121212;
+      --text-color: #fff;
+      --header-bg: #1f1f1f;
+      --header-text: #00ffcc;
+      --input-bg: #1e1e1e;
+      --btn-bg: #00b894;
+      --btn-hover: #00997a;
+    }
     body {
       font-family: Arial, sans-serif;
-      background: #f7f7f7;
+      background: var(--bg-color);
+      color: var(--text-color);
       margin: 0;
       padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      transition: background 0.3s, color 0.3s;
     }
     .chat-container {
-      max-width: 600px;
-      width: 95%;
-      margin: 20px auto;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      padding: 15px;
       display: flex;
       flex-direction: column;
-      height: 90vh; /* Full height on mobile */
+      width: 100%;
+      max-width: 600px;
+      height: 100vh;
+      background: var(--bg-color);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: background 0.3s;
     }
-    h2 {
-      margin: 0 0 10px 0;
+    header {
+      padding: 15px;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-size: 20px;
       text-align: center;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
     .messages {
       flex: 1;
       overflow-y: auto;
-      border: 1px solid #ddd;
       padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 10px;
-      background: #fafafa;
+      border-top: 1px solid #444;
+      border-bottom: 1px solid #444;
     }
-    .message {
-      margin: 8px 0;
-      word-wrap: break-word;
-    }
-    .user {
-      text-align: right;
-      color: #007bff;
-    }
-    .bot {
-      text-align: left;
-      color: #333;
-    }
+    .message { margin: 10px 0; }
+    .user { text-align: right; }
+    .bot { text-align: left; }
     .input-area {
       display: flex;
-      gap: 5px;
+      padding: 10px;
+      background: var(--input-bg);
     }
     input {
       flex: 1;
-      padding: 10px;
-      border-radius: 5px;
+      padding: 12px;
+      border-radius: 20px;
       border: 1px solid #ccc;
-      font-size: 14px;
+      outline: none;
+      font-size: 16px;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background 0.3s, color 0.3s;
     }
     button {
-      padding: 10px 15px;
+      margin-left: 8px;
+      padding: 12px 18px;
       border: none;
-      border-radius: 5px;
-      background: #007bff;
+      border-radius: 20px;
+      background: var(--btn-bg);
       color: white;
-      font-size: 14px;
       cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
     }
-    button:hover {
-      background: #0056b3;
-    }
+    button:hover { background: var(--btn-hover); }
 
-    /* Mobile adjustments */
-    @media (max-width: 480px) {
+    /* Mobile optimization */
+    @media (max-width: 600px) {
       .chat-container {
-        height: 100vh;
-        margin: 0;
-        border-radius: 0;
+        height: 100%;
       }
-      input, button {
-        font-size: 12px;
-        padding: 8px;
+      .messages {
+        height: calc(100vh - 140px);
       }
-      h2 {
-        font-size: 18px;
+      input {
+        font-size: 14px;
+      }
+      button {
+        font-size: 14px;
+        padding: 10px 14px;
       }
     }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <h2>🤖 TechMate</h2>
+    <header>
+      🤖 TechMate
+      <button onclick="toggleTheme()" style="background:none; border:none; font-size:18px; cursor:pointer; color:var(--header-text);">🌙</button>
+    </header>
     <div class="messages" id="messages"></div>
     <div class="input-area">
-      <input type="text" id="userInput" placeholder="Type your message..." onkeypress="if(event.key === 'Enter'){sendMessage()}">
+      <input type="text" id="userInput" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendMessage()">
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
@@ -108,16 +135,32 @@
       const messagesDiv = document.getElementById("messages");
       messagesDiv.innerHTML += `<div class="message user"><b>You:</b> ${msg}</div>`;
       input.value = "";
-
-      const response = await fetch("/get", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg })
-      });
-      const data = await response.json();
-
-      messagesDiv.innerHTML += `<div class="message bot"><b>TechMate:</b> ${data.reply}</div>`;
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+      try {
+        const response = await fetch("/get", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: msg })
+        });
+        const data = await response.json();
+        messagesDiv.innerHTML += `<div class="message bot"><b>TechMate:</b> ${data.reply}</div>`;
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      } catch (err) {
+        messagesDiv.innerHTML += `<div class="message bot"><b>TechMate:</b> Error connecting to server</div>`;
+      }
+    }
+
+    // Mobile resize fix
+    window.addEventListener("resize", () => {
+      document.querySelector(".messages").scrollTop = document.querySelector(".messages").scrollHeight;
+    });
+
+    // Theme toggle
+    function toggleTheme() {
+      document.body.classList.toggle("dark");
+      const btn = document.querySelector("header button");
+      btn.textContent = document.body.classList.contains("dark") ? "☀️" : "🌙";
     }
   </script>
 </body>
