@@ -2,115 +2,99 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TechMate</title>
+  <title>TechMate 🤖</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Important for mobile -->
   <style>
-    :root {
-      --bg-color: #f7f7f7;
-      --text-color: #333;
-      --header-bg: #007bff;
-      --header-text: #fff;
-      --input-bg: #fff;
-    }
-
     body {
       font-family: Arial, sans-serif;
-      background: var(--bg-color);
-      color: var(--text-color);
+      background: #f7f7f7;
       margin: 0;
       padding: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: stretch;
-      transition: background 0.3s, color 0.3s;
     }
-
     .chat-container {
+      max-width: 600px;
+      width: 95%;
+      margin: 20px auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 15px;
       display: flex;
       flex-direction: column;
-      width: 100%;
-      max-width: 600px;
-      height: 100%;
-      background: var(--bg-color);
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      height: 90vh; /* Full height on mobile */
     }
-
-    header {
-      flex-shrink: 0;
-      padding: 15px;
-      background: var(--header-bg);
-      color: var(--header-text);
-      font-size: 20px;
+    h2 {
+      margin: 0 0 10px 0;
       text-align: center;
-      font-weight: bold;
     }
-
     .messages {
       flex: 1;
       overflow-y: auto;
+      border: 1px solid #ddd;
       padding: 10px;
-      scroll-behavior: smooth;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      background: #fafafa;
     }
-
     .message {
       margin: 8px 0;
-      padding: 8px 12px;
-      border-radius: 12px;
-      max-width: 75%;
       word-wrap: break-word;
     }
-
     .user {
-      background: #007bff;
-      color: white;
-      align-self: flex-end;
+      text-align: right;
+      color: #007bff;
     }
-
     .bot {
-      background: #e9ecef;
-      color: black;
-      align-self: flex-start;
+      text-align: left;
+      color: #333;
     }
-
     .input-area {
-      flex-shrink: 0;
       display: flex;
-      padding: 10px;
-      background: var(--input-bg);
-      border-top: 1px solid #ccc;
+      gap: 5px;
     }
-
     input {
       flex: 1;
       padding: 10px;
       border-radius: 5px;
       border: 1px solid #ccc;
-      font-size: 16px;
+      font-size: 14px;
     }
-
     button {
       padding: 10px 15px;
       border: none;
       border-radius: 5px;
       background: #007bff;
       color: white;
-      font-size: 16px;
-      margin-left: 8px;
+      font-size: 14px;
       cursor: pointer;
     }
-
     button:hover {
       background: #0056b3;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 480px) {
+      .chat-container {
+        height: 100vh;
+        margin: 0;
+        border-radius: 0;
+      }
+      input, button {
+        font-size: 12px;
+        padding: 8px;
+      }
+      h2 {
+        font-size: 18px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="chat-container">
-    <header>🤖 TechMate</header>
+    <h2>🤖 TechMate</h2>
     <div class="messages" id="messages"></div>
     <div class="input-area">
-      <input type="text" id="userInput" placeholder="Type your message..." onkeypress="if(event.key==='Enter'){sendMessage()}">
+      <input type="text" id="userInput" placeholder="Type your message..." onkeypress="if(event.key === 'Enter'){sendMessage()}">
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
@@ -122,49 +106,19 @@
       if (!msg) return;
 
       const messagesDiv = document.getElementById("messages");
-
-      // User message
-      const userMsgDiv = document.createElement("div");
-      userMsgDiv.className = "message user";
-      userMsgDiv.innerHTML = msg;
-      messagesDiv.appendChild(userMsgDiv);
-
+      messagesDiv.innerHTML += `<div class="message user"><b>You:</b> ${msg}</div>`;
       input.value = "";
-      scrollToBottom();
 
-      // Bot typing placeholder
-      const botMsgDiv = document.createElement("div");
-      botMsgDiv.className = "message bot";
-      botMsgDiv.innerHTML = "Typing...";
-      messagesDiv.appendChild(botMsgDiv);
-      scrollToBottom();
+      const response = await fetch("/get", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: msg })
+      });
+      const data = await response.json();
 
-      try {
-        const response = await fetch("/get", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: msg })
-        });
-
-        const data = await response.json();
-        botMsgDiv.innerHTML = data.reply || "⚠️ No response";
-      } catch (err) {
-        botMsgDiv.innerHTML = "⚠️ Error: " + err.message;
-      }
-
-      scrollToBottom();
-    }
-
-    // Auto-scroll function
-    function scrollToBottom() {
-      const messagesDiv = document.getElementById("messages");
+      messagesDiv.innerHTML += `<div class="message bot"><b>TechMate:</b> ${data.reply}</div>`;
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
-
-    // Ensure scroll stays bottom when keyboard opens (mobile fix)
-    document.getElementById("userInput").addEventListener("focus", () => {
-      setTimeout(scrollToBottom, 300);
-    });
   </script>
 </body>
 </html>
